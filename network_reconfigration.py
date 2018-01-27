@@ -44,42 +44,31 @@ def milp_sdn_routing(res_bw, flows, edge_info, path_num, flow_require):
     y = pulp.LpVariable.dicts("choose a path", [(flow, path_index) for flow in flows
             for path_index in xrange(path_num)], 0, 1, cat='Binary')
 
-    # constrains
+    # constrains 1
     for flow in flows:
         model += pulp.lpSum(y[(flow, i)] for i in xrange(path_num)) == 1
 
+    # constrains 2
     total_used_bd = {}
-    # cost_list = defaultdict(int)
     for edge in edges:
         total_used_bd[edge] = 0
         for flow in flows:
             total_used_bd[edge] += sum(flow_require[flow] * y[(flow, i)] *
                                        edge_info[edge][flow][i] for i in xrange(path_num))
-        # used_bd = 10 - (res_bw[edge] - total_used_bd[edge])
-        # cost_list[edge] = int(link_cost(used_bd))
         model += total_used_bd[edge] <= res_bw[edge]
 
-    # total_link_cost = 0
-    # for edge in edges:
-    #     used_bd = 10 - (res_bw[edge] - total_used_bd[edge])
-    #     total_link_cost += int(link_cost(used_bd))
-    #
-    # model += total_link_cost, 'minimize the link cost'
+    # objection
+    cost_list = defaultdict(int)
+    total_used = {}
+    for edge in edges:
+        total_used[edge] = 0
+        for flow in flows:
+            total_used[edge] += sum(flow_require[flow] * y[(flow, i)] *
+                                       edge_info[edge][flow][i] for i in xrange(path_num))
+        used_bd = 10 - (res_bw[edge] - total_used[edge])
+        cost_list[edge] = int(link_cost(used_bd))
 
-    # cost_list = defaultdict(int)
-    # total_used = {}
-    # for edge in edges:
-    #     total_used[edge] = 0
-    #     for flow in flows:
-    #         total_used[edge] += sum(flow_require[flow] * y[(flow, i)] *
-    #                                    edge_info[edge][flow][i] for i in xrange(path_num))
-    #     used_bd = 10 - (res_bw[edge] - total_used[edge])
-    #     cost_list[edge] = int(link_cost(used_bd))
-
-    # test another object
-    # model += pulp.lpSum(cost_list.values()), 'minimize the link cost'
-    cost = [5,3,3]
-    model += pulp.lpSum(y[(flow, i)]*cost[i] for flow in flows for i in xrange(path_num)), 'minimize the link cost'
+    model += pulp.lpSum(cost_list[edge] for edge in edges), 'minimize the link cost'
 
     model.solve()
     status = pulp.LpStatus[model.status]
