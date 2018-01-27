@@ -15,7 +15,7 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+# https://github.com/dodoyuan/SDN-QoS-RYU-APP.git
 # import setting
 import pulp
 from collections import defaultdict
@@ -56,12 +56,17 @@ def milp_sdn_routing(res_bw, flows, edge_info, path_num, flow_require):
                                        edge_info[edge][flow][i] for i in xrange(path_num))
         model += total_used_bd[edge] <= res_bw[edge]
 
-    total_link_cost = 0
+    # total_link_cost = 0
+    # for edge in edges:
+    #     used_bd = 10 - (res_bw[edge] - total_used_bd[edge])
+    #     total_link_cost += int(link_cost(used_bd))
+    #
+    # model += total_link_cost, 'minimize the link cost'
+    cost_list = {}
     for edge in edges:
         used_bd = 10 - (res_bw[edge] - total_used_bd[edge])
-        total_link_cost += int(link_cost(used_bd))
-
-    model += total_link_cost, 'minimize the link cost'
+        cost_list[edge] = int(link_cost(used_bd))
+    model += pulp.lpSum(cost_list.keys()) , 'minimize the link cost'
 
     model.solve()
     status = pulp.LpStatus[model.status]
