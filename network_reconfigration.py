@@ -58,17 +58,17 @@ def milp_sdn_routing(res_bw, flows, edge_info, path_num, flow_require):
         model += total_used_bd[edge] <= res_bw[edge]
 
     # objection
-    cost_list = defaultdict(int)
+    # cost_list = defaultdict(int)
     total_used = {}
     for edge in edges:
         total_used[edge] = 0
         for flow in flows:
             total_used[edge] += sum(flow_require[flow] * y[(flow, i)] *
                                        edge_info[edge][flow][i] for i in xrange(path_num))
-        used_bd = 10 - (res_bw[edge] - total_used[edge])
-        cost_list[edge] = int(link_cost(used_bd))
+        # used_bd = 10 - (res_bw[edge] - total_used[edge])
+        # cost_list[edge] = int(link_cost(used_bd))
 
-    model += pulp.lpSum(cost_list[edge] for edge in edges), 'minimize the link cost'
+    model += pulp.lpSum(total_used[edge] for edge in edges), 'minimize the link cost'
 
     model.solve()
     status = pulp.LpStatus[model.status]
