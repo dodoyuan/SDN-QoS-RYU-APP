@@ -142,7 +142,7 @@ class ShortestForwarding(app_manager.RyuApp):
         self.logger.info('-----------require QoS flow info----------------')
         for key, flow in self.flow.items():
             self.logger.info("key:%s '--->'flow:%s" % (key, flow))
-            self.logger.info('ip info (src dst): %s' % key[1:3])
+            # self.logger.info('ip info (src dst): %s' % key[1:3])
         self.logger.info('-----------info end----------------------')
 
     @set_ev_cls(ofp_event.EventOFPStateChange,
