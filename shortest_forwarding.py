@@ -75,6 +75,7 @@ class ShortestForwarding(app_manager.RyuApp):
         self.flow = defaultdict(list)   # (eth_type, ip_pkt.src, ip_pkt.dst, in_port)-->
                                         # [require_band, priority,(src,dst)]
         # self.flow_ip = []
+        self.lookup = {}   # (src,dst) --> (eth_type, ip_pkt.src, ip_pkt.dst, in_port)
         self.graph_res_bw = None       # save the residual bandwidth graph with remove of chosen graph
         self.count = 1
         self.config_priority = 2  #
@@ -102,28 +103,15 @@ class ShortestForwarding(app_manager.RyuApp):
             self.handle_flag = 0  # avoid handle repeat request
             self.config_flag = 0
             # allpath, flow_identity, max_priority = self.reconfigration()
-            allpath, flow_identity, max_priority = self.milp_routing(chosen_flow)
-            self.logger.info("new path for high priority data :%s" % allpath)
-            self.logger.info("the max priority weight is: %d" % max_priority)
-            for num in range(len(flow_identity)):
-                flow_info = flow_identity[num]
-                if num in allpath.keys():
-                    self.logger.info("handle flow : %s" % str(flow_identity[num]))
-                    self.install_flow(self.datapaths,
-                                      self.awareness.link_to_port,
-                                      self.awareness.access_table, allpath[num],
-                                      flow_info, None, prio=self.config_priority, set_queue=0)
-
-                else:
-                    self.logger.info("not handle flow : %s" % str(flow_identity[num]))
-                    # for not handle flow,find a new path with most bandwidth
-                    flow = self.flow[flow_info]
-                    path = self.get_path(flow[2][0], flow[2][1], 0, weight='weight')
-                    self.logger.info("flow %s path %s" % (flow_info, path))
-                    self.install_flow(self.datapaths,
-                                      self.awareness.link_to_port,
-                                      self.awareness.access_table, path,
-                                      flow_info, None, prio=self.config_priority, set_queue=1)
+            chosen_path, flow_paths = self.milp_routing(chosen_flow)
+            for flow, value in chosen_path:
+                flow_info = self.lookup[flow]
+                path = flow_paths[flow][int(value)]
+                self.logger.info("handle flow : %s chosen_path: %s" % (flow, path))
+                self.install_flow(self.datapaths,
+                                  self.awareness.link_to_port,
+                                  self.awareness.access_table, path,
+                                  flow_info, None, prio=self.config_priority)
             self.config_priority += 1
 
     def add_drop_flow(self, flow_info, prio):
@@ -447,10 +435,10 @@ class ShortestForwarding(app_manager.RyuApp):
             require_band = value[2]
             assert len(path) > 1
             for i in xrange(len(path)-1):
-                if path[i] == link[0] and path[i+1] == link[1]:
+                if (path[i] == link[0] and path[i+1] == link[1]) or (path[i] == link[1] and path[i+1] == link[0]):
                     chose_flow[key] = value
                     bw += require_band
-                    if bw > setting.MAX_CAPACITY * 0.2:  # reasonable value to set
+                    if bw > setting.MAX_CAPACITY * 0.4:  # reasonable value to set
                         return chose_flow
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
@@ -508,6 +496,7 @@ class ShortestForwarding(app_manager.RyuApp):
     def milp_routing(self,chosen_flow):
         '''
             chosen_flow --->  chose_flow[(ipsrc, ipdst)] = [(src_dp,dst_dp)， path, require_band]
+            prepare the information for ILP model
         '''
         flow_require = {}
         for flow, value in chosen_flow.items():
@@ -532,7 +521,9 @@ class ShortestForwarding(app_manager.RyuApp):
                     nPath[flow].pop()
         edge_info = self.path_to_link_vector(nPath)
         flows = nPath.keys()
-        milp_sdn_routing(res_bw, flows, edge_info, path_number, flow_require)
+        path_res, obj = milp_sdn_routing(res_bw, flows, edge_info, path_number, flow_require)
+        print 'the minimize maximize link utilization:', obj
+        return path_res, nPath
 
 
     def path_to_link_vector(self,npath):
@@ -571,6 +562,9 @@ class ShortestForwarding(app_manager.RyuApp):
                 # (eth_type, ip_pkt.src, ip_pkt.dst, in_port)--> [require_band,priority,(src_dp,dst_dp)]
                 self.flow[(eth_type, ip_pkt.src, ip_pkt.dst, in_port)] = flow_info
                 self.flow_path[(ip_pkt.src, ip_pkt.dst)] = [result]
+                #  self.flow_path[(eth_type, ip_pkt.src, ip_pkt.dst, in_port)] = [result]
+                # (src,dst) --> (eth_type, ip_pkt.src, ip_pkt.dst, in_port)
+                self.lookup[(ip_pkt.src, ip_pkt.dst)] = (eth_type, ip_pkt.src, ip_pkt.dst, in_port)
                 self.show_ilp_data()
                 self.count += 1  # flow identification
                 # assert self.count < 10
