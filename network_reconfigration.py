@@ -78,8 +78,8 @@ def milp_sdn_routing(res_bw, flows, edge_info, path_num, flow_require):
         cost_list.append(used_bd)
 
     # model += pulp.lpSum(float(cost_list[edge]) for edge in edges), 'minimize the link cost'
-    a = np.array(cost_list)
-    model += pulp.lpSum(np.var(a)), 'minimize the link cost'
+    # model += pulp.lpSum(cost_list), 'minimize the link cost'
+    model += max(cost_list), 'minimize the link cost'
 
     model.solve()
     status = pulp.LpStatus[model.status]
