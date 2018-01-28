@@ -120,12 +120,20 @@ class NetworkMonitor(app_manager.RyuApp):
         if _len > 1:
             minimal_band_width = min_bw
             for i in xrange(_len-1):
-                pre, curr = path[i], path[i+1]
-                if 'bandwidth' in self.graph[pre][curr]:
-                    bw = self.graph[pre][curr]['bandwidth']
-                    minimal_band_width = min(bw, minimal_band_width)
-                else:
-                    continue
+                if setting.prob_bandwidth:   # work for prob
+                    pre, curr = path[i], path[i+1]
+                    if 'bandwidth' in self.graph[pre][curr]:
+                        bw = self.graph[pre][curr]['bandwidth']
+                        minimal_band_width = min(bw, minimal_band_width)
+                    else:
+                        continue
+                else:                        # work for making note
+                    if (path[i], path[i+1]) in self.res_bw:
+                        bw = self.res_bw[(path[i], path[i+1])]
+                        minimal_band_width = min(bw, minimal_band_width)
+                    elif (path[i+1], path[i]) in self.res_bw:
+                        bw = self.res_bw[(path[i], path[i + 1])]
+                        minimal_band_width = min(bw, minimal_band_width)
             return minimal_band_width
         return min_bw
 
@@ -136,7 +144,7 @@ class NetworkMonitor(app_manager.RyuApp):
             WSP algorithm
         """
         reconf_flag = 1
-        max_bw_of_paths = 0
+        # max_bw_of_paths = 0
         bw_guaranteed_paths = paths[0]
         # for path in paths:
         #     # self.logger.info("fun get bw guaranteed path:%s" % path)
@@ -158,7 +166,7 @@ class NetworkMonitor(app_manager.RyuApp):
         #         bw_guaranteed_paths = path
         # ---------------------------------------------
         # shortest path
-        max_bw_of_paths = self.get_min_bw_of_links(bw_guaranteed_paths, setting.MAX_CAPACITY)
+        # max_bw_of_paths = self.get_min_bw_of_links(bw_guaranteed_paths, setting.MAX_CAPACITY)
         # ---------------------------------------------
         # update the residual bandwidth
         min_bw, congstion_edge = self.update_res_bw(bw_guaranteed_paths, require_band)
