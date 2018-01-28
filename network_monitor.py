@@ -58,8 +58,7 @@ class NetworkMonitor(app_manager.RyuApp):
         self.save_freebandwidth_thread = hub.spawn(self._save_bw_graph)
         # note the allocated bandwidth
         self.res_bw = defaultdict(int)
-        for edge in self.awareness.edges.keys():
-            self.res_bw[edge] = setting.MAX_CAPACITY
+
 
     @set_ev_cls(ofp_event.EventOFPStateChange,
                 [MAIN_DISPATCHER, DEAD_DISPATCHER])
@@ -90,6 +89,10 @@ class NetworkMonitor(app_manager.RyuApp):
             if self.stats['port']:
                 self.show_stat('port')
                 hub.sleep(1)
+
+        hub.sleep(setting.MONITOR_PERIOD)
+        for edge in self.awareness.edges.keys():
+            self.res_bw[edge] = setting.MAX_CAPACITY if self.res_bw[edge] is None else self.res_bw[edge]
 
     def _save_bw_graph(self):
         """
