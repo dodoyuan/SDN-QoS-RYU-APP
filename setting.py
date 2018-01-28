@@ -13,6 +13,8 @@ MAX_CAPACITY = 100  # Max capacity of link
 
 path_number = 3
 
+prob_bandwidth = False
+
 def get_link_capacity(dpid, port, return_matrix_flag):
     link_capacity = defaultdict(lambda: defaultdict(lambda: 10))
     # link_capacity[4][1] = 100

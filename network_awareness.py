@@ -145,7 +145,7 @@ class NetworkAwareness(app_manager.RyuApp):
 
                     # add a data for ilp module
                     if (src, dst) not in self.edges and (dst, src) not in self.edges:
-                        self.edges[(src, dst)] = defaultdict(lambda :defaultdict(0))
+                        self.edges[(src, dst)] = defaultdict(lambda: defaultdict(0))
                     # if (dst, src) not in self.edges:
                     #     self.edges[(dst, src)] = 0
 

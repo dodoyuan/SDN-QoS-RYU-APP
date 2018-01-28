@@ -48,7 +48,7 @@ class NetworkMonitor(app_manager.RyuApp):
         # self.flow_speed = {}
         self.stats = {}
         self.free_bandwidth = {}
-        # self.res_bw = defaultdict(lambda:defaultdict(int))
+
         self.awareness = lookup_service_brick('awareness')
         self.graph = None
         self.congest_link = (0, 0)
@@ -56,6 +56,10 @@ class NetworkMonitor(app_manager.RyuApp):
         # free bandwidth of links respectively.
         self.monitor_thread = hub.spawn(self._monitor)
         self.save_freebandwidth_thread = hub.spawn(self._save_bw_graph)
+        # note the allocated bandwidth
+        self.res_bw = defaultdict(int)
+        for edge in self.awareness.edges.keys():
+            self.res_bw[edge] = setting.MAX_CAPACITY
 
     @set_ev_cls(ofp_event.EventOFPStateChange,
                 [MAIN_DISPATCHER, DEAD_DISPATCHER])
@@ -77,7 +81,7 @@ class NetworkMonitor(app_manager.RyuApp):
         """
             Main entry method of monitoring traffic.
         """
-        while setting.WEIGHT == 'bw':
+        while setting.WEIGHT == 'bw' and setting.prob_bandwidth:
             self.stats['port'] = {}
             for dp in self.datapaths.values():
                 self._request_stats(dp)
@@ -91,7 +95,7 @@ class NetworkMonitor(app_manager.RyuApp):
         """
             Save bandwidth data into networkx graph object.
         """
-        while setting.WEIGHT == 'bw':
+        while setting.WEIGHT == 'bw' and setting.prob_bandwidth:
             self.graph = self.create_bw_graph(self.free_bandwidth)
             self.logger.debug("save_freebandwidth")
             hub.sleep(setting.MONITOR_PERIOD)
@@ -156,14 +160,46 @@ class NetworkMonitor(app_manager.RyuApp):
         # shortest path
         max_bw_of_paths = self.get_min_bw_of_links(bw_guaranteed_paths, setting.MAX_CAPACITY)
         # ---------------------------------------------
-        # the link congestion threshold is 0.98
-        if (max_bw_of_paths - require_band) / setting.MAX_CAPACITY > 0.02:
+        # update the residual bandwidth
+        min_bw, congstion_edge = self.update_res_bw(bw_guaranteed_paths, require_band)
+        self.res_bw_show()
+        # the link congestion threshold is 0.9
+        if min_bw / setting.MAX_CAPACITY > 0.11:
             reconf_flag = 0
         else:
             # function for detecting the congesting link
-            s1, s2 = self.dectect_congest_link(bw_guaranteed_paths)
-            self.congest_link = (s1, s2, max_bw_of_paths)
+            # s1, s2 = self.dectect_congest_link(bw_guaranteed_paths)
+            print 'congestion hanppend'
+            self.congest_link = [congstion_edge, min_bw]
         return bw_guaranteed_paths, reconf_flag
+
+    def res_bw_show(self):
+        print '--------------------residual bandwidth------------------'
+        for edge, value in self.res_bw.items():
+            print edge, '----->', value
+        print '------------------------end-----------------------------'
+
+    def update_res_bw(self, path, require_bd):
+        '''
+           given a path and required bandwidth, update the allocated bandwidth.
+           :return the minimal bandwidth of links
+        '''
+        _len, edge = len(path), None
+        min_bw = 10
+        if _len > 1:
+            for i in xrange(_len - 1):
+                if (path[i], path[i+1]) in self.res_bw:
+                    self.res_bw[(path[i], path[i+1])] = max(self.res_bw[(path[i], path[i+1])] - require_bd, 0)
+                    if self.res_bw[(path[i], path[i+1])] < min_bw:
+                        min_bw, edge = self.res_bw[(path[i], path[i+1])], (path[i], path[i+1])
+                elif (path[i+1], path[i]) in self.res_bw:
+                    self.res_bw[(path[i+1], path[i])] = max(self.res_bw[(path[i+1], path[i])] - require_bd, 0)
+                    if self.res_bw[(path[i], path[i+1])] < min_bw:
+                        min_bw, edge = self.res_bw[(path[i], path[i+1])], (path[i], path[i+1])
+            return min_bw, edge
+        else:
+            return setting.MAX_CAPACITY, edge
+
 
     def dectect_congest_link(self,path):
         '''
@@ -196,13 +232,18 @@ class NetworkMonitor(app_manager.RyuApp):
         # for src_sw, dst_sw in edge_bw:
         #     self.res_bw[src_sw][dst_sw] = self.graph[src_sw][dst_sw]['bandwidth']
         #
-        res_bw = copy.deepcopy(self.graph)
-        for value in choose_flow.values:
+        for value in choose_flow.values():
             path = value[1]
             for i in xrange(len(path)-1):
-                res_bw[path[i]][path[i + 1]]['bandwidth'] += value[2]
-                res_bw[path[i + 1]][path[i]]['bandwidth'] += value[2]
-        return res_bw
+                if (path[i], path[i + 1]) in self.res_bw:
+                    self.res_bw[(path[i], path[i + 1])] += value[2]
+                    if self.res_bw > setting.MAX_CAPACITY:
+                        self.res_bw = setting.MAX_CAPACITY
+                if (path[i+1], path[i]) in self.res_bw:
+                    self.res_bw[(path[i+1], path[i])] += value[2]
+                    if self.res_bw > setting.MAX_CAPACITY:
+                        self.res_bw = setting.MAX_CAPACITY
+        return self.res_bw
 
     def create_bw_graph(self, bw_dict):
         """

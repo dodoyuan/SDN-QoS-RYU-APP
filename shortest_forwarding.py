@@ -101,19 +101,28 @@ class ShortestForwarding(app_manager.RyuApp):
         # self.logger.debug("config_flag:%s handle-flag %s" % (self.config_flag, self.handle_flag))
         if self.handle_flag:
             self.logger.debug("enter reconfigration")
+            # print information
+            print 'before ILP model'
+            self.monitor.res_bw_show()
             self.handle_flag = 0  # avoid handle repeat request
             self.config_flag = 0
+
             # allpath, flow_identity, max_priority = self.reconfigration()
             chosen_path, flow_paths = self.milp_routing(chosen_flow)
             for flow, value in chosen_path:
                 flow_info = self.lookup[flow]
                 path = flow_paths[flow][int(value)]
+                # update the res bd
+                self.monitor.update_res_bw(path, self.flow_path[flow][2])
                 self.logger.info("handle flow : %s chosen_path: %s" % (flow, path))
                 self.install_flow(self.datapaths,
                                   self.awareness.link_to_port,
                                   self.awareness.access_table, path,
                                   flow_info, None, prio=self.config_priority)
             self.config_priority += 1
+            # print information
+            print 'after ILP model'
+            self.monitor.res_bw_show()
 
     def add_drop_flow(self, flow_info, prio):
         '''
@@ -427,16 +436,16 @@ class ShortestForwarding(app_manager.RyuApp):
            if congestion happened, use the located link and flow path information,
            get the flows to reroute
         '''
-        congestion_inf = self.monitor.congest_link
-        link = congestion_inf[:2]
-        bw = congestion_inf[-1]
+        congestion_info = self.monitor.congest_link
+        link = congestion_info[0]
+        bw = congestion_info[1]
         chose_flow = {}
         for key, value in self.flow_path.items():
             path = value[1]
             require_band = value[2]
             assert len(path) > 1
             for i in xrange(len(path)-1):
-                if (path[i] == link[0] and path[i+1] == link[1]) or (path[i] == link[1] and path[i+1] == link[0]):
+                if (path[i], path[i+1]) is link or (path[i+1], path[i]) is link:
                     chose_flow[key] = value
                     bw += require_band
                     if bw > setting.MAX_CAPACITY * 0.4:  # reasonable value to set
@@ -569,14 +578,3 @@ class ShortestForwarding(app_manager.RyuApp):
                 self.show_ilp_data()
                 self.count += 1  # flow identification
                 # assert self.count < 10
-
-    def link_capacity_maxtrix(self, edges, port_capacity):
-        '''
-            create the link capacity based on port_capacity
-        '''
-        link_capacity = defaultdict(int)
-        for edge in edges:
-            sw1, sw2 = edge[0], edge[1]
-            ports = self.awareness.link_to_port[edge]
-            link_capacity[edge] = port_capacity[sw1][ports[0]]
-        return link_capacity
