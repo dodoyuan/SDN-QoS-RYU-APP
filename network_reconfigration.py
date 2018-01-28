@@ -51,23 +51,26 @@ def milp_sdn_routing(res_bw, flows, edge_info, path_num, flow_require):
 
     # constrains 2
     total_used_bd = {}
+    cost_list = []
     for edge in edges:
         total_used_bd[edge] = 0
         for flow in flows:
             total_used_bd[edge] += sum(flow_require[flow] * y[(flow, i)] *
                                        edge_info[edge][flow][i] for i in xrange(path_num))
+        used_bd = 10 - (res_bw[edge] - total_used_bd[edge])
+        cost_list.append(used_bd)
         model += total_used_bd[edge] <= res_bw[edge]
 
     # objection
     # cost_list = defaultdict(int)
-    cost_list = []
-    total_used = {}
-    for edge in edges:
-        total_used[edge] = 0
-        for flow in flows:
-            total_used[edge] += sum(flow_require[flow] * y[(flow, i)] *
-                                       edge_info[edge][flow][i] for i in xrange(path_num))
-        used_bd = 10 - (res_bw[edge] - total_used[edge])
+    # cost_list = []
+    # total_used = {}
+    # for edge in edges:
+    #     total_used[edge] = 0
+    #     for flow in flows:
+    #         total_used[edge] += sum(flow_require[flow] * y[(flow, i)] *
+    #                                    edge_info[edge][flow][i] for i in xrange(path_num))
+    #     used_bd = 10 - (res_bw[edge] - total_used[edge])
 
         # cost_list[edge] = int(link_cost(used_bd))
         # cost_list[edge] = used_bd if 0 <= used_bd < 10.0/3 else 3*used_bd if 10.0/3 <= used_bd < 20.0/3 \
@@ -75,7 +78,7 @@ def milp_sdn_routing(res_bw, flows, edge_info, path_num, flow_require):
         #     9 <= used_bd < 10 else 700
         # cost_list[edge] = used_bd
         # cost_list[edge] = int(link_cost(used_bd))
-        cost_list.append(used_bd)
+        # cost_list.append(used_bd)
 
     # model += pulp.lpSum(float(cost_list[edge]) for edge in edges), 'minimize the link cost'
     # model += pulp.lpSum(cost_list), 'minimize the link cost'
