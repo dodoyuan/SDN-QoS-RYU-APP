@@ -92,7 +92,8 @@ class NetworkMonitor(app_manager.RyuApp):
 
         hub.sleep(setting.MONITOR_PERIOD)
         for edge in self.awareness.edges.keys():
-            self.res_bw[edge] = setting.MAX_CAPACITY if self.res_bw[edge] is None else self.res_bw[edge]
+            if self.res_bw[edge] is None:
+                self.res_bw[edge] = setting.MAX_CAPACITY
 
     def _save_bw_graph(self):
         """

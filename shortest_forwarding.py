@@ -454,6 +454,7 @@ class ShortestForwarding(app_manager.RyuApp):
                     bw += require_band
                     if bw > setting.MAX_CAPACITY * 0.4:  # reasonable value to set
                         return chose_flow
+        return {}
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
