@@ -76,7 +76,7 @@ def milp_sdn_routing(res_bw, flows, edge_info, path_num, flow_require):
         if v.varValue and 'path' in v.name:
             print v.name, '=', v.varValue
             temp = v.name.split(',')
-            src, dst = temp[0][-10:], temp[1][1:-1]
+            src, dst = temp[0][-9:-1], temp[1][2:-2]
             chosen_path[(src, dst)] = temp[2][1]
     print flows
     print chosen_path
