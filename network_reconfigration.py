@@ -20,7 +20,6 @@
 import pulp
 from collections import defaultdict
 import time
-import numpy as np
 
 def exeTime(func):
     def newFunc(*args, **args2):
@@ -44,7 +43,7 @@ def milp_sdn_routing(res_bw, flows, edge_info, path_num, flow_require):
     model = pulp.LpProblem("link load balance", pulp.LpMinimize)
     y = pulp.LpVariable.dicts("choose a path", [(flow, path_index) for flow in flows
             for path_index in xrange(path_num)], 0, 1, cat='Binary')
-    z = pulp.LpVariable('z',lowBound=0,cat='Continuous')
+    z = pulp.LpVariable('z', lowBound=0, cat='Continuous')
 
     # constrains 1
     for flow in flows:
@@ -63,7 +62,6 @@ def milp_sdn_routing(res_bw, flows, edge_info, path_num, flow_require):
         model += z >= used_bd
 
     # objection
-
     model += z, 'minimize the link cost'
 
     model.solve()
@@ -73,9 +71,15 @@ def milp_sdn_routing(res_bw, flows, edge_info, path_num, flow_require):
     total_cost = pulp.value(model.objective)
     print "the minimize cost is {}".format(total_cost)
 
+    chosen_path = {}
     for v in model.variables():
         if v.varValue:
             print v.name, '=', v.varValue
+            temp = v.name.split(',')
+            src, dst = temp[0][-10:], temp[1][1:-1]
+            chosen_path[(src, dst)] = temp[2][1]
+    print flows
+    print chosen_path
 
 
 def link_cost(bandwidth):
@@ -92,7 +96,6 @@ def link_cost(bandwidth):
         return 70 * bandwidth - 1780.0/3
     else:
         return 700
-
 
 
 def neighbor_head(node, edges):
