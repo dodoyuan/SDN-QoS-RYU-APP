@@ -3,17 +3,20 @@ from mininet.cli import CLI
 from mininet.net import Mininet
 from mininet.node import RemoteController
 # from mininet.term import makeTerm
-# from mininet.link import TCLink
+from mininet.link import TCLink
 
 if '__main__' == __name__:
 
     # net = Mininet(controller=RemoteController,link=TCLink)
-    net = Mininet(controller=RemoteController)
+    net = Mininet(controller=RemoteController, link=TCLink)
     c0 = net.addController('c0', port=6633)
     s1 = net.addSwitch('s1')
     s2 = net.addSwitch('s2')
     s3 = net.addSwitch('s3')
     s4 = net.addSwitch('s4')
+    s5 = net.addSwitch('s5')
+    s6 = net.addSwitch('s6')
+    s7 = net.addSwitch('s7')
 
     h1 = net.addHost('h1')
     h2 = net.addHost('h2')
@@ -29,15 +32,20 @@ if '__main__' == __name__:
     net.addLink(s1, h2)
     net.addLink(s1, h3)
     net.addLink(s1, h4)
-    net.addLink(s4, h5)
-    net.addLink(s4, h6)
-    net.addLink(s4, h7)
-    net.addLink(s4, h8)
+    net.addLink(s7, h5)
+    net.addLink(s7, h6)
+    net.addLink(s7, h7)
+    net.addLink(s7, h8)
 
-    net.addLink(s1, s2)
-    net.addLink(s2, s4)
-    net.addLink(s3, s4)
-    net.addLink(s1, s3)
+    net.addLink(s1, s2, bw=10)
+    net.addLink(s1, s3, bw=10)
+    net.addLink(s1, s4, bw=10)
+    net.addLink(s2, s5, bw=10)
+    net.addLink(s3, s7, bw=10)
+    net.addLink(s4, s6, bw=10)
+    net.addLink(s5, s7, bw=10)
+    net.addLink(s6, s7, bw=10)
+
 
     net.build()
     c0.start()
