@@ -33,7 +33,7 @@ k_paths = 2
 WEIGHT = 'bw'
 
 # predefined requirement band-with of each source IP
-require_band = {"10.0.0.1": 2, "10.0.0.2": 2, "10.0.0.3": 2, "10.0.0.4": 2}
+require_band = {"10.0.0.1": 3, "10.0.0.2": 3, "10.0.0.3": 3, "10.0.0.4": 3}
 
 # predefined priority of each source IP
 priority_weight = {"10.0.0.1": 16, "10.0.0.2": 8, "10.0.0.3": 4}
