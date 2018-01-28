@@ -80,7 +80,7 @@ class ShortestForwarding(app_manager.RyuApp):
         self.graph_res_bw = None       # save the residual bandwidth graph with remove of chosen graph
         self.count = 1
         self.config_priority = 2  #
-        self.config_flag = 0
+        self.congstion = 0
         self.handle_flag = 0
         self.flow_path = {}
 
@@ -105,7 +105,7 @@ class ShortestForwarding(app_manager.RyuApp):
             print 'before ILP model'
             self.monitor.res_bw_show()
             self.handle_flag = 0  # avoid handle repeat request
-            self.config_flag = 0
+            self.congstion = 0
 
             # allpath, flow_identity, max_priority = self.reconfigration()
             chosen_path, flow_paths = self.milp_routing(chosen_flow)
@@ -305,9 +305,9 @@ class ShortestForwarding(app_manager.RyuApp):
             return shortest_paths.get(src).get(dst)[0]
         elif weight == self.WEIGHT_MODEL['bw']:
             path = shortest_paths[src][dst]
-            bw_guarantee_path, reconf_flag = self.monitor.get_bw_guaranteed_path(path, require_band)
+            bw_guarantee_path = self.monitor.get_bw_guaranteed_path(path, require_band)
 
-            return bw_guarantee_path, reconf_flag
+            return bw_guarantee_path
 
     def get_sw(self, dpid, in_port, src, dst):
         """
@@ -413,10 +413,12 @@ class ShortestForwarding(app_manager.RyuApp):
             src_sw, dst_sw = result[0], result[1]
             if dst_sw:
                 # self.logger.info("src %s dst %s " % (src_sw, dst_sw))
-                path, self.config_flag = self.get_path(src_sw, dst_sw, require_band, weight=self.weight)
+                path = self.get_path(src_sw, dst_sw, require_band, weight=self.weight)
                 if (ip_src, ip_dst) in self.flow_path and len(self.flow_path[(ip_src, ip_dst)]) == 1:
                     self.flow_path[(ip_src, ip_dst)].extend([path, require_band])
                     self.logger.info("[PATH]%s<-->%s: %s" % (ip_src, ip_dst, path))
+                    # update residual bandwidth here and return network status
+                    self.congstion = self.monitor.update_res_bw_and_congestion_detect(path, require_band)
                 flow_info = (eth_type, ip_src, ip_dst, in_port)
                 # install flow entries to datapath along side the path.
                 self.install_flow(self.datapaths,
@@ -424,7 +426,7 @@ class ShortestForwarding(app_manager.RyuApp):
                                   self.awareness.access_table, path,
                                   flow_info, msg.buffer_id, msg.data, 1)
 
-        if self.config_flag:
+        if self.congstion:
             # if congestion,get the flow to reroute
             chose_flow = self.get_interfere_flow()
             if chose_flow is not None:
