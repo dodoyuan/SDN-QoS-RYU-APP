@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright (C) 2016 Li Cheng at Beijing University of Posts
 # and Telecommunications. www.muzixing.com
 #
@@ -14,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# coding=utf-8
+
 # import logging
 # import struct
 # import networkx as nx
