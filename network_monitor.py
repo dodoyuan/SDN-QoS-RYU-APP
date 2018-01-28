@@ -204,7 +204,7 @@ class NetworkMonitor(app_manager.RyuApp):
            :return the minimal bandwidth of links
         '''
         _len, edge = len(path), None
-        min_bw = 10
+        min_bw = setting.MAX_CAPACITY
         if _len > 1:
             for i in xrange(_len - 1):
                 if (path[i], path[i+1]) in self.res_bw:
@@ -213,8 +213,8 @@ class NetworkMonitor(app_manager.RyuApp):
                         min_bw, edge = self.res_bw[(path[i], path[i+1])], (path[i], path[i+1])
                 elif (path[i+1], path[i]) in self.res_bw:
                     self.res_bw[(path[i+1], path[i])] = max(self.res_bw[(path[i+1], path[i])] - require_bd, 0)
-                    if self.res_bw[(path[i], path[i+1])] < min_bw:
-                        min_bw, edge = self.res_bw[(path[i], path[i+1])], (path[i], path[i+1])
+                    if self.res_bw[(path[i+1], path[i])] < min_bw:
+                        min_bw, edge = self.res_bw[(path[i+1], path[i])], (path[i+1], path[i])
             return min_bw, edge
         else:
             return setting.MAX_CAPACITY, edge
