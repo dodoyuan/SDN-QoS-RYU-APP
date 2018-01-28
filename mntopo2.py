@@ -53,6 +53,10 @@ if '__main__' == __name__:
     s2.start([c0])
     s3.start([c0])
     s4.start([c0])
+    s5.start([c0])
+    s6.start([c0])
+    s7.start([c0])
+
 
     # net.startTerms()
     CLI(net)
