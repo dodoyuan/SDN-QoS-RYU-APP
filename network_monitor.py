@@ -57,7 +57,7 @@ class NetworkMonitor(app_manager.RyuApp):
         self.monitor_thread = hub.spawn(self._monitor)
         self.save_freebandwidth_thread = hub.spawn(self._save_bw_graph)
         # note the allocated bandwidth
-        self.res_bw = defaultdict(int)
+        self.res_bw = {}
 
 
     @set_ev_cls(ofp_event.EventOFPStateChange,
@@ -242,7 +242,6 @@ class NetworkMonitor(app_manager.RyuApp):
         # edge_bw = self.awareness.edges
         # for src_sw, dst_sw in edge_bw:
         #     self.res_bw[src_sw][dst_sw] = self.graph[src_sw][dst_sw]['bandwidth']
-        #
         for value in choose_flow.values():
             path = value[1]
             for i in xrange(len(path)-1):

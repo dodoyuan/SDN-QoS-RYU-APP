@@ -427,7 +427,11 @@ class ShortestForwarding(app_manager.RyuApp):
         if self.config_flag:
             # if congestion,get the flow to reroute
             chose_flow = self.get_interfere_flow()
-            self.graph_res_bw = self.monitor.residual_bandwidth(chose_flow)
+            if chose_flow is not None:
+                print 'chosen flow:', chose_flow
+                self.graph_res_bw = self.monitor.residual_bandwidth(chose_flow)
+            else:
+                print 'no chosen flow'
             self._ilp_process(chose_flow)
         return
 
