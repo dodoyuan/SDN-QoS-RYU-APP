@@ -429,12 +429,13 @@ class ShortestForwarding(app_manager.RyuApp):
         if self.congstion:
             # if congestion,get the flow to reroute
             chose_flow = self.get_interfere_flow()
-            if chose_flow is not None:
+            if chose_flow != {}:
                 print 'chosen flow:', chose_flow
                 self.graph_res_bw = self.monitor.residual_bandwidth(chose_flow.values())
+                self._ilp_process(chose_flow)
             else:
                 print 'no chosen flow'
-            self._ilp_process(chose_flow)
+
         return
 
     def get_interfere_flow(self):
@@ -451,7 +452,7 @@ class ShortestForwarding(app_manager.RyuApp):
             require_band = value[2]
             assert len(path) > 1
             for i in xrange(len(path)-1):
-                if (path[i], path[i+1]) is link or (path[i+1], path[i]) is link:
+                if (path[i], path[i+1]) == link or (path[i+1], path[i]) == link:
                     chose_flow[key] = value
                     bw += require_band
                     if bw > setting.MAX_CAPACITY * 0.4:  # reasonable value to set
