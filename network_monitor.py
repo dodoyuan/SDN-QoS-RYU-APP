@@ -258,12 +258,12 @@ class NetworkMonitor(app_manager.RyuApp):
             for i in xrange(len(path)-1):
                 if (path[i], path[i + 1]) in self.res_bw:
                     self.res_bw[(path[i], path[i + 1])] += value[2]
-                    if self.res_bw > setting.MAX_CAPACITY:
-                        self.res_bw = setting.MAX_CAPACITY
-                if (path[i+1], path[i]) in self.res_bw:
+                    if self.res_bw[(path[i], path[i + 1])] > setting.MAX_CAPACITY:
+                        self.res_bw[(path[i], path[i + 1])] = setting.MAX_CAPACITY
+                elif (path[i+1], path[i]) in self.res_bw:
                     self.res_bw[(path[i+1], path[i])] += value[2]
-                    if self.res_bw > setting.MAX_CAPACITY:
-                        self.res_bw = setting.MAX_CAPACITY
+                    if self.res_bw[(path[i+1], path[i])] > setting.MAX_CAPACITY:
+                        self.res_bw[(path[i+1], path[i])] = setting.MAX_CAPACITY
         return self.res_bw
 
     def create_bw_graph(self, bw_dict):
