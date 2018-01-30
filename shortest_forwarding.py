@@ -501,10 +501,10 @@ class ShortestForwarding(app_manager.RyuApp):
             flow_dst = msg.match.get('ipv4_dst')
             flow_src = msg.match.get('ipv4_src')
             # flow_inport = msg.match.get('in_port')
-            if self.flow_path[(flow_src, flow_dst)]:
+            if (flow_src, flow_dst) in self.flow_path:
                 flow = self.lookup[(flow_src, flow_dst)]
                 self.logger.info("del flow info :%s" % str(flow))
-                del self.flow[flow]
+                del self.flow[flow] 
                 self.monitor.residual_bandwidth([self.flow_path[(flow_src, flow_dst)]])  #
                 del self.flow_path[(flow_src, flow_dst)]
                 del self.lookup[(flow_src, flow_dst)]
