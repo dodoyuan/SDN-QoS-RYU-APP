@@ -503,7 +503,7 @@ class ShortestForwarding(app_manager.RyuApp):
             # flow_inport = msg.match.get('in_port')
             if self.flow_path[(flow_src, flow_dst)]:
                 flow = self.lookup[(flow_src, flow_dst)]
-                self.logger.info("del flow info :%s" % flow)
+                self.logger.info("del flow info :%s" % str(flow))
                 del self.flow[flow]
                 self.monitor.residual_bandwidth([self.flow_path[(flow_src, flow_dst)]])  #
                 del self.flow_path[(flow_src, flow_dst)]
