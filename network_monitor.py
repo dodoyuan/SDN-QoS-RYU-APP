@@ -264,7 +264,7 @@ class NetworkMonitor(app_manager.RyuApp):
                     self.res_bw[(path[i+1], path[i])] += value[2]
                     if self.res_bw[(path[i+1], path[i])] > setting.MAX_CAPACITY:
                         self.res_bw[(path[i+1], path[i])] = setting.MAX_CAPACITY
-        return self.res_bw
+        # return self.res_bw
 
     def create_bw_graph(self, bw_dict):
         """

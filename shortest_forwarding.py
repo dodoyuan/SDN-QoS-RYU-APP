@@ -41,7 +41,6 @@ import network_monitor
 import setting
 from network_reconfigration import milp_sdn_routing
 from copy import deepcopy
-from itertools import izip
 
 
 class ShortestForwarding(app_manager.RyuApp):
@@ -77,7 +76,6 @@ class ShortestForwarding(app_manager.RyuApp):
                                         # [require_band, priority,(src,dst)]
         # self.flow_ip = []
         self.lookup = {}   # (src,dst) --> (eth_type, ip_pkt.src, ip_pkt.dst, in_port)
-        self.graph_res_bw = None       # save the residual bandwidth graph with remove of chosen graph
         self.count = 1
         self.config_priority = 2  #
         self.congstion = 0
@@ -431,7 +429,7 @@ class ShortestForwarding(app_manager.RyuApp):
             chose_flow = self.get_interfere_flow()
             if chose_flow != {}:
                 print 'chosen flow:', chose_flow
-                self.graph_res_bw = self.monitor.residual_bandwidth(chose_flow.values())
+                self.monitor.residual_bandwidth(chose_flow.values())
                 self._ilp_process(chose_flow)
             else:
                 print 'no chosen flow'
@@ -521,7 +519,7 @@ class ShortestForwarding(app_manager.RyuApp):
         flow_require = {}
         for flow, value in chosen_flow.items():
             flow_require[flow] = value[2]
-        res_bw = self.graph_res_bw  # graph_res_bw[src][dst]['bandwidth'] =
+        res_bw = self.monitor.res_bw  # graph_res_bw[src][dst]['bandwidth'] =
 
         # (eth_type, ip_pkt.src, ip_pkt.dst, in_port)--> [require_band,priority,(src_dp,dst_dp)]
         # self.flow[(eth_type, ip_pkt.src, ip_pkt.dst, in_port)] = flow_info
@@ -540,7 +538,9 @@ class ShortestForwarding(app_manager.RyuApp):
                 if len(nPath) > path_number:
                     nPath[flow].pop()
         edge_info = self.path_to_link_vector(nPath)
+        print 'edge_info:', edge_info
         flows = nPath.keys()
+        print 'flows:',flows
         path_res, obj = milp_sdn_routing(res_bw, flows, edge_info, path_number, flow_require)
         print 'the minimize maximize link utilization:', obj
         return path_res, nPath
@@ -552,13 +552,12 @@ class ShortestForwarding(app_manager.RyuApp):
         '''
         edges_info = deepcopy(self.awareness.edges)
         for flow in npath:
-            for i, path in enumerate(npath[flow]):
-                path1, path2 = path[:-1], path[1:]
-                for edge in izip(path1, path2):
-                    if edge in edges_info:
-                        edges_info[edge][flow][i] = 1
-                    elif edge[::-1] in edges_info:
-                        edges_info[edge[::-1]][flow][i] = 1
+            for j, path in enumerate(npath[flow]):
+                for i in xrange(len(path) - 1):
+                    if (path[i], path[i + 1]) in edges_info:
+                        edges_info[(path[i], path[i + 1])][flow][j] = 1
+                    elif (path[i+1], path[i]) in edges_info:
+                        edges_info[(path[i + 1], path[i])][flow][j] = 1
         return edges_info
 
     def ilp_data_handle(self, ip_pkt, eth_type, datapath_id, require_band):
