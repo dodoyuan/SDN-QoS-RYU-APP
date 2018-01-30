@@ -250,7 +250,7 @@ class NetworkMonitor(app_manager.RyuApp):
         # edge_bw = self.awareness.edges
         # for src_sw, dst_sw in edge_bw:
         #     self.res_bw[src_sw][dst_sw] = self.graph[src_sw][dst_sw]['bandwidth']
-        for value in choose_flow.values():
+        for value in choose_flow:
             path = value[1]
             for i in xrange(len(path)-1):
                 if (path[i], path[i + 1]) in self.res_bw:

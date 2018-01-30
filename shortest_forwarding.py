@@ -431,7 +431,7 @@ class ShortestForwarding(app_manager.RyuApp):
             chose_flow = self.get_interfere_flow()
             if chose_flow is not None:
                 print 'chosen flow:', chose_flow
-                self.graph_res_bw = self.monitor.residual_bandwidth(chose_flow)
+                self.graph_res_bw = self.monitor.residual_bandwidth(chose_flow.values())
             else:
                 print 'no chosen flow'
             self._ilp_process(chose_flow)
@@ -487,7 +487,7 @@ class ShortestForwarding(app_manager.RyuApp):
                     self.ilp_data_handle(ip_pkt, eth_type, datapath.id, require_band)
                 self.shortest_forwarding(msg, eth_type, ip_pkt.src, ip_pkt.dst, require_band)
 
-    # @set_ev_cls(ofp_event.EventOFPFlowRemoved, MAIN_DISPATCHER)
+    @set_ev_cls(ofp_event.EventOFPFlowRemoved, MAIN_DISPATCHER)
     def _flow_removed_handler(self, ev):
         '''
             In flow removed handler, get the ip address and unregister in
@@ -505,6 +505,7 @@ class ShortestForwarding(app_manager.RyuApp):
                 if (flow_src, flow_dst, flow_inport) == key[1:] and dp.id == value[2][0]:
                     self.logger.info("del flow info :%s" % str(key))
                     del self.flow[key]
+                    self.monitor.residual_bandwidth(self.flow_path[(flow_src, flow_dst)])  # TODO
                     del self.flow_path[(flow_src, flow_dst)]
                     self.count -= 1
                     self.show_ilp_data()
