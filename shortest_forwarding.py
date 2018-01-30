@@ -500,15 +500,16 @@ class ShortestForwarding(app_manager.RyuApp):
         if msg.reason == ofp.OFPRR_IDLE_TIMEOUT or msg.reason == ofp.OFPRR_HARD_TIMEOUT:
             flow_dst = msg.match.get('ipv4_dst')
             flow_src = msg.match.get('ipv4_src')
-            flow_inport = msg.match.get('in_port')
-            for key, value in self.flow.items():
-                if (flow_src, flow_dst, flow_inport) == key[1:] and dp.id == value[2][0]:
-                    self.logger.info("del flow info :%s" % str(key))
-                    del self.flow[key]
-                    self.monitor.residual_bandwidth(self.flow_path[(flow_src, flow_dst)])  # TODO
-                    del self.flow_path[(flow_src, flow_dst)]
-                    self.count -= 1
-                    self.show_ilp_data()
+            # flow_inport = msg.match.get('in_port')
+            if self.flow_path[(flow_src, flow_dst)]:
+                flow = self.lookup[(flow_src, flow_dst)]
+                self.logger.info("del flow info :%s" % flow)
+                del self.flow[flow]
+                self.monitor.residual_bandwidth([self.flow_path[(flow_src, flow_dst)]])  #
+                del self.flow_path[(flow_src, flow_dst)]
+                del self.lookup[(flow_src, flow_dst)]
+                self.count -= 1
+                self.show_ilp_data()
 
 
     def milp_routing(self,chosen_flow):

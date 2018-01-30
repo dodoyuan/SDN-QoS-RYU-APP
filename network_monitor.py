@@ -202,6 +202,7 @@ class NetworkMonitor(app_manager.RyuApp):
         '''
            given a path and required bandwidth, update the allocated bandwidth.
            :return the minimal bandwidth of links
+           update bandwidth with minus require_bd
         '''
         _len, edge = len(path), None
         min_bw = setting.MAX_CAPACITY
@@ -246,6 +247,7 @@ class NetworkMonitor(app_manager.RyuApp):
         '''
            get the residual bandwidth of the graph
            and remove of the chosen flow
+            update bandwidth with add require_bd
         '''
         # edge_bw = self.awareness.edges
         # for src_sw, dst_sw in edge_bw:
