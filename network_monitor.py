@@ -57,7 +57,7 @@ class NetworkMonitor(app_manager.RyuApp):
         self.monitor_thread = hub.spawn(self._monitor)
         self.save_freebandwidth_thread = hub.spawn(self._save_bw_graph)
         # note the allocated bandwidth
-        self.res_bw = defaultdict(None)
+        self.res_bw = {}
         self.one_shot = True
 
 
@@ -95,6 +95,7 @@ class NetworkMonitor(app_manager.RyuApp):
         if self.one_shot:
             for edge in self.awareness.edges.keys():
                     self.res_bw[edge] = setting.MAX_CAPACITY
+            print 'res bw:', self.res_bw
             self.one_shot = False
 
     def _save_bw_graph(self):
