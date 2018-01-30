@@ -107,7 +107,9 @@ class ShortestForwarding(app_manager.RyuApp):
 
             # allpath, flow_identity, max_priority = self.reconfigration()
             chosen_path, flow_paths = self.milp_routing(chosen_flow)
-            for flow, value in chosen_path:
+            print 'chosen path:', chosen_path
+            print 'flow path:', flow_paths
+            for flow, value in chosen_path.items():
                 flow_info = self.lookup[flow]
                 path = flow_paths[flow][int(value)]
                 # update the res bd
@@ -544,7 +546,6 @@ class ShortestForwarding(app_manager.RyuApp):
         path_res, obj = milp_sdn_routing(res_bw, flows, edge_info, path_number, flow_require)
         print 'the minimize maximize link utilization:', obj
         return path_res, nPath
-
 
     def path_to_link_vector(self,npath):
         '''
