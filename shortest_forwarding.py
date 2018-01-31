@@ -507,6 +507,7 @@ class ShortestForwarding(app_manager.RyuApp):
                 self.logger.info("del flow info :%s" % str(flow))
                 del self.flow[flow]
                 self.monitor.residual_bandwidth([self.flow_path[(flow_src, flow_dst)]])  #
+                self.monitor.res_bw_show()
                 del self.flow_path[(flow_src, flow_dst)]
                 del self.lookup[(flow_src, flow_dst)]
                 self.count -= 1
