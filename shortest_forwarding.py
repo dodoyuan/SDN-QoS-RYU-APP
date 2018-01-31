@@ -112,6 +112,7 @@ class ShortestForwarding(app_manager.RyuApp):
             for flow, value in chosen_path.items():
                 flow_info = self.lookup[flow]
                 path = flow_paths[flow][int(value)]
+                self.flow_path[flow][1] = path
                 # update the res bd
                 self.monitor.update_res_bw(path, self.flow_path[flow][2])
                 self.logger.info("handle flow : %s chosen_path: %s" % (flow, path))
